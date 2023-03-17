@@ -1,4 +1,4 @@
-class OneMove:
+class OneMove(object):
 
     def update(self, gameinfo):
 
