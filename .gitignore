@@ -163,3 +163,4 @@ dmypy.json
 *.pidb
 *.svclog
 *.scc
+.vs/
