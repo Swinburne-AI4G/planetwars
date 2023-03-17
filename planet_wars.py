@@ -38,26 +38,26 @@ class PlanetWarsGame():
 
 	def add_player(self, name, color=None):
 		''' Add a player by name, which will be created and contain a
-            controller "bot" loaded from the bot directory.
-        '''
+			controller "bot" loaded from the bot directory.
+		'''
 		# determine the player id, and get their unique logging function
 		player_id = len(self.players) + 1
 		log = self.logger.get_player_logger(player_id)
 		# create a new player insance, and tell them about all initial planets
 		self.players[player_id] = Player(player_id, name, color, log, self.cfg)
 		self.players[player_id].planets.update(
-		    (k, v.copy()) for k, v in self.planets.items())
-        # check / warn missing home planet for player! (won't get any moves)
-        planets = [p_id for p_id, p in self.planets.items() if p.owner_id == player_id]
-        if not planets:
-            print(f"WARNING! There is no home planet in map for player [{player_id}] '{name}'")
-            for p_id, p, in self.planets.items():
-                if p.owner_id == NEUTRAL_ID:
-                    p.owner_id = player_id
-                    print(f" - selected first available planet id={p_id}")
-                    break
-        # track how many are alive
-        self.alive_players = player_id
+			(k, v.copy()) for k, v in self.planets.items())
+		# check / warn missing home planet for player! (won't get any moves)
+		planets = [p_id for p_id, p in self.planets.items() if p.owner_id == player_id]
+		if not planets:
+			print(f"WARNING! There is no home planet in map for player [{player_id}] '{name}'")
+			for p_id, p, in self.planets.items():
+				if p.owner_id == NEUTRAL_ID:
+					p.owner_id = player_id
+					print(f" - selected first available planet id={p_id}")
+					break
+		# track how many are alive
+		self.alive_players = player_id
 
 	def _parse_gamestate_text(self, gamestate):
 		# get the lines, remove comments
@@ -70,7 +70,7 @@ class PlanetWarsGame():
 				# Planet(x, y, planet_id, owner_id, num_ships, growth_rate)
 				# todo: use "unpack" format (struct?/pickle?)
 				p = Planet(float(bits[1]), float(bits[2]), int(
-				    bits[3]), int(bits[4]), int(bits[5]), int(bits[6]))
+					bits[3]), int(bits[4]), int(bits[5]), int(bits[6]))
 				self.planets[p.id] = p
 				# update extent (area) of map as required
 				if p.y + p.growth_rate > self.extent[0]:
@@ -99,12 +99,12 @@ class PlanetWarsGame():
 		# todo: this doesn't match the _parse_gamestate_text format anymore
 		s = []
 		s.append("M %d %d %d %d" %
-		         (self.gameid, self.player_id, self.tick, self.winner.id))
+				 (self.gameid, self.player_id, self.tick, self.winner.id))
 		for p in self.planets:
 			s.append("P %f %f %d %d %d" % (p.x, p.y, p.owner_id, p.num_ships, p.growth_rate))
 		for f in self.fleets:
 			s.append("F %d %d %d %d %d %d" % (f.owner_id, f.num_ships, f.src, f.dest,
-			                                  f.total_trip_length, f.turns_remaining))
+											  f.total_trip_length, f.turns_remaining))
 		return "\n".join(s)
 
 	def reset(self):
@@ -153,10 +153,10 @@ class PlanetWarsGame():
 					pass
 				elif winner_id == p.owner_id:
 					self.turn_log(
-					    "{0:4d}: Player {1} defended planet {2}".format(self.tick, winner_id, p.id))
+						"{0:4d}: Player {1} defended planet {2}".format(self.tick, winner_id, p.id))
 				else:
 					self.turn_log(
-					    "{0:4d}: Player {1} now owns planet {2}".format(self.tick, winner_id, p.id))
+						"{0:4d}: Player {1} now owns planet {2}".format(self.tick, winner_id, p.id))
 				# Set the new winner
 				p.owner_id = winner_id
 				p.num_ships = gap_size
@@ -202,17 +202,17 @@ class PlanetWarsGame():
 
 	def _process_orders(self, player):
 		''' Process all pending orders for the player, then clears the orders.
-            An order sends ships from a player-owned fleet or planet to a planet.
+			An order sends ships from a player-owned fleet or planet to a planet.
 
-            Checks for valid order conditions:
-            - Valid source src (planet or fleet)
-            - Valid destination dest (planet only)
-            - Source is owned by player
-            - Source has ships to launch (>0)
-            - Limits number of ships to number available
+			Checks for valid order conditions:
+			- Valid source src (planet or fleet)
+			- Valid destination dest (planet only)
+			- Source is owned by player
+			- Source has ships to launch (>0)
+			- Limits number of ships to number available
 
-            Invalid orders are modfied (ship number limit) or ignored.
-        '''
+			Invalid orders are modfied (ship number limit) or ignored.
+		'''
 		player_id = player.id
 		for order in player.orders:
 			o_type, src_id, new_id, num_ships, dest_id = order
@@ -243,7 +243,7 @@ class PlanetWarsGame():
 					# keep new fleet
 					self.fleets[new_id] = fleet
 					msg = "{0:4d}: Player {1} launched {2} (left {3}) ships from {4} {5} to planet {6}".format(
-					    self.tick, player_id, num_ships, src.num_ships, o_type, src.id, dest.id)
+						self.tick, player_id, num_ships, src.num_ships, o_type, src.id, dest.id)
 					self.turn_log(msg)
 					player.log(msg)
 				else:
