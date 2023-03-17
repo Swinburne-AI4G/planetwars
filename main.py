@@ -22,8 +22,8 @@ import uuid
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(
-	    prog="PlanetWars",
-	    description=""" 
+		prog="PlanetWars",
+		description=""" 
 					Deceptive PlanetWars Simulation
 
 						Created by 
@@ -31,34 +31,34 @@ if __name__ == "__main__":
 						Clinton Woodward (2012)
 						James Bonner (2023)
 						contact: cwoodward@swin.edu.au""",
-	    formatter_class=argparse.RawDescriptionHelpFormatter,
+		formatter_class=argparse.RawDescriptionHelpFormatter,
 	)
 	parser.add_argument(
-	    "-p",
-	    "--players",
-	    nargs="*",
-	    help="Players in this run. Should be the name (no extension) of file found in /bots. Ignored if the map or replay has players hardcoded.",
+		"-p",
+		"--players",
+		nargs="*",
+		help="Players in this run. Should be the name (no extension) of file found in /bots. Ignored if the map or replay has players hardcoded.",
 	)
 	parser.add_argument(
-	    "-m",
-	    "--map",
-	    help="Filename (no extension) of map to play on. If not supplied, a random map is generated for play.",
+		"-m",
+		"--map",
+		help="Filename (no extension) of map to play on. If not supplied, a random map is generated for play.",
 	)
 	parser.add_argument(
-	    "-g",
-	    "--generate",
-	    help="Generate a new random map. Outputs the json for the map to the filename provided.",
+		"-g",
+		"--generate",
+		help="Generate a new random map. Outputs the json for the map to the filename provided.",
 	)
 	parser.add_argument(
-	    "-r",
-	    "--replay",
-	    help="Filename (no extension) of replay to run. Does nothing without either --gui or --logscript being provided",
+		"-r",
+		"--replay",
+		help="Filename (no extension) of replay to run. Does nothing without either --gui or --logscript being provided",
 	)
 	parser.add_argument(
-	    "--gui", help="Runs with the graphical output", action="store_true")
+		"--gui", help="Runs with the graphical output", action="store_true")
 	parser.add_argument(
-	    "--logscript",
-	    help="Adds a log output script. Could be used to make game ticks/actions human readable or to print statistics about the game states.",
+		"--logscript",
+		help="Adds a log output script. Could be used to make game ticks/actions human readable or to print statistics about the game states.",
 	)
 	args = parser.parse_args()
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 	if not "players" in gamestate:
 		if not args.players:
 			print(
-			    "Players not specified in the map/replay, or on the command line. To run with this map/replay, specify the players using -p."
+				"Players not specified in the map/replay, or on the command line. To run with this map/replay, specify the players using -p."
 			)
 			exit()
 		gamestate["players"] = []
