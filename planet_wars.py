@@ -1,4 +1,4 @@
-
+from entities import Planet, Fleet
 from players import Player
 from collections import defaultdict
 from logger import Logger
@@ -18,7 +18,10 @@ class PlanetWarsGame():
 		if 'orders' in gamestate_json:
 			self.orders = gamestate_json['orders']
 		if 'players' in gamestate_json:
-			self.players = gamestate_json['players']
+			self.players = {}
+			for p in gamestate_json['players']:
+				self.players[p["ID"]] = p
+			
 		self.extent = {'x': 0, 'y': 0, 'w': 0, 'h': 0}
 		self.tick = 0
 		self.winner = None
