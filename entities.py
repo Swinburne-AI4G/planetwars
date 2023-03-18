@@ -41,7 +41,7 @@ class Entity():
 		# self._name = "%s:%s" % (type(self).__name__, str(id))
 
 
-	#distnace_to does not sqrt by default - still effective for comparisons etc., but not strictly accurate.
+	#distance_to does not sqrt by default - still effective for comparisons etc., but not strictly accurate.
 	#if you need the precise sitance forwhatever reason, pass in sqrt = True
 	def distance_to(self, other, sqrt=False):
 		if self.id == other.id:
