@@ -12,7 +12,7 @@
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>Global|PythonCore|3.11</InterpreterId>
-    <CommandLineArguments>--gui -m map001 -p Blanko OneMove</CommandLineArguments>
+    <CommandLineArguments>--gui -m map001 -p Blanko OneSlowMove</CommandLineArguments>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
@@ -23,6 +23,7 @@
   <ItemGroup>
     <Compile Include="bots\Blanko.py" />
     <Compile Include="bots\OneMove.py" />
+    <Compile Include="bots\OneSlowMove.py" />
     <Compile Include="bots\__init__.py" />
     <Compile Include="entities.py" />
     <Compile Include="logger.py" />
