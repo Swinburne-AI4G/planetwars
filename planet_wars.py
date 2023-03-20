@@ -39,8 +39,10 @@ class PlanetWarsGame():
 				self.update_facade(player)
 
 		self.tick = 0
+		self.max_tick = 1000
 		self.winner = None
-		self.dirty = True;
+		self.dirty = True
+		self.paused = True
 
 	def spawn_players(self):
 		players_to_be_spawned = []
@@ -297,12 +299,14 @@ class PlanetWarsGame():
 
 	def is_alive(self):
 		''' Return True if two or more players are still alive. '''
-		status = [p for p in self.players.values() if p.is_alive()]
-		if len(status) == 1:
-			self.winner = status[0]
-			return False
-		else:
-			return True
+		#why are we asking the players if they're alive?
+		#status = [p for p in self.players.values() if p.is_alive()]
+		#if len(status) == 1:
+		#	self.winner = status[0]
+		#	return False
+		#else:
+		#	return True
+		return True
 
 	def turn_log(self, msg):
 		pass

@@ -167,7 +167,6 @@ class PlanetWarsEntityRenderer:
 class PlanetWarsUI:
 
 	def __init__(self, window):
-		self.label_type = "ships"
 		self.fps_display = pyglet.window.FPSDisplay(window)
 		self.step_label = pyglet.text.Label(
 			"STEP", x=5, y=window.height - 20, color=COLOR_NAMES_255["WHITE"])
@@ -216,19 +215,22 @@ class PlanetWarsWindow(pyglet.window.Window):
 		#load the renderer for game elements
 		self.gamerenderer = PlanetWarsEntityRenderer(self.game, self)
 
-		pyglet.clock.schedule_interval(game.update, 1/60.)
+		self.view_id = 0 #TODO: should be in gamerenderer?
+
+		pyglet.clock.schedule_interval(self.update, 1/60.)
 		pyglet.app.run()
 
 	def update(self, args):
 		# gets called by the scheduler at the step_fps interval set
 		if self.game:
-			if not self.paused:
+			if not self.game.paused:
 				self.gamerenderer.update()
 				self.game.update()
 
 			# update step label
+			#should be in UI
 			msg = "Step:" + str(self.game.tick)
-			if self.paused:
+			if self.game.paused:
 				msg += " [PAUSED]"
 			msg += f' -- POV: [{self.view_id}] '
 			if self.view_id in self.game.players:
@@ -236,11 +238,11 @@ class PlanetWarsWindow(pyglet.window.Window):
 			elif self.view_id == 0:
 				msg += ' All '
 			msg += str(self.game.tick)
-			msg += " Show: " + self.label_type
+			msg += " Show: " + self.gamerenderer.displayproperty
 
-			self.step_label.text = msg
+			#self.step_label.text = msg
 			# Has the game ended? (Should we close?)
-			if not self.game.is_alive() or self.game.tick >= self.max_tick:
+			if not self.game.is_alive() or self.game.tick >= self.game.max_tick:
 				self.close()
 			if self.game.dirty:
 				self.gamerenderer.sync_all()
@@ -252,10 +254,12 @@ class PlanetWarsWindow(pyglet.window.Window):
 		# Single Player View, or All View
 		if symbol == pyglet.window.key.BRACKETLEFT:
 			self.view_id = (
-				self.view_id - 1 if self.view_id > 1 else len(self.game.players))
+				self.view_id - 1 if self.view_id > 1 else len(self.game.players)
+			)
 		if symbol == pyglet.window.key.BRACKETRIGHT:
 			self.view_id = (
-				self.view_id + 1 if self.view_id < len(self.game.players) else 1)
+				self.view_id + 1 if self.view_id < len(self.game.players) else 1
+			)
 		# Everyone view
 		elif symbol == pyglet.window.key.A:
 			self.view_id = 0  # == "all"
