@@ -23,17 +23,17 @@ class Entity():
         See Fleet and Planet classes.
     '''
 
-	def __init__(self, json):
-		if 'ID' in json:
-			self.ID = json['ID']
+	def __init__(self, x, y, ID=None, owner=None, ships=0):
+		if ID:
+			self.ID = ID
 		else:
 			self.ID = str(uuid.uuid1())
 
-		self.x = json['x']
-		self.y = json['y']
-		self.ships = json['ships']
-		if 'owner' in json:
-			self.owner = json['owner']
+		self.x = x
+		self.y = y
+		self.ships = ships
+		if owner:
+			self.owner = owner
 		else:
 			self.owner = NEUTRAL_ID
 		# self.vision_age = 0
@@ -42,12 +42,17 @@ class Entity():
 
 
 	#distance_to does not sqrt by default - still effective for comparisons etc., but not strictly accurate.
-	#if you need the precise sitance forwhatever reason, pass in sqrt = True
-	def distance_to(self, other, sqrt=False):
-		if self.id == other.id:
-			return 0.0
-		dx = self.x - other.x
-		dy = self.y - other.y
+	#if you need the precise distance for whatever reason, pass in sqrt = True
+	#can pass in an entity, or an x and y param (e.g. if your point is not an entity)
+	def distance_to(self, other=None, x=None, y=None, sqrt=False):
+		if other:
+			if self.ID == other.ID:
+				return 0.0
+			dx = self.x - other.x
+			dy = self.y - other.y
+		else:
+			dx = self.x - x
+			dy = self.y - y
 		if sqrt:
 			return math.sqrt(dx * dx + dy * dy)
 		else:
@@ -57,15 +62,15 @@ class Entity():
 		if ships <= 0:
 			raise ValueError("%s (owner %s) tried to send %d ships (of %d)." %
 			                 (self.ID, self.owner, ships, self.ships))
-		if self.num_ships < ships:
+		if self.ships < ships:
 			raise ValueError("%s (owner %s) can't remove more ships (%d) then it has (%d)!" %
 			                 (self.ID, self.owner, ships, self.ships))
-		self.num_ships -= ships
+		self.ships -= ships
 
-	def add_ships(self, num_ships):
-		if num_ships < 0:
+	def add_ships(self, ships):
+		if ships < 0:
 			raise ValueError("Cannot add a negative number of ships...")
-		self.num_ships += num_ships
+		self.ships += ships
 
 	def update(self):
 		raise NotImplementedError("This method cannot be called on this 'abstract' class")
@@ -76,7 +81,7 @@ class Entity():
 	def in_range(self, entities):
 		''' Returns a list of entity id's that are within vision range of this entity.'''
 		limit = self.vision_range()
-		return [p.id for p in entities if self.distance_to(p) <= limit]
+		return [p.ID for p in entities if self.distance_to(p) <= limit]
 
 	def __str__(self):
 		return "%s, owner: %s, ships: %d" % (self.ID, self.owner, self.ships)
@@ -90,14 +95,19 @@ class Planet(Entity):
         to the growth rate (size).
     '''
 
-	def __init__(self, json):
-		super().__init__(json)
-		self.growth = json['growth']
+	def __init__(self, x, y, ID=None, owner=None, ships=None, growth=1):
+		super().__init__(x, y, ID, owner, ships)
+		if self.x < 50:
+			print("Planet is close to or beyond the bottom of the renderable area")
+		if self.x < 50:
+			print("Planet is close to or beyond the left of the renderable area")
+
+		self.growth = growth
 
 	def update(self):
 		''' If the planet is owned, grow the number of ships (advancement). '''
-		if self.owner_id != NEUTRAL_ID:
-			self.add_ships(self.growth_rate)
+		if self.owner != NEUTRAL_ID:
+			self.add_ships(self.growth)
 		self.was_battle = False
 
 	def vision_range(self):
@@ -117,11 +127,14 @@ class Fleet(Entity):
     '''
 
 
-	def __init__(self, json):
-		super(Fleet, self).__init__(json)
-		self.dest = json['dest']
+	def __init__(self, ID=None, owner=None, ships=None, src=None, dest=None, x=None, y=None):
+		super().__init__(
+			x or src.x, 
+			y or src.y, 
+			ID, owner, ships)
+		self.dest = dest
 		# we store heading because it is unlikely to change from tick to tick
-		self.heading = math.tanh((self.dest['x']-self.x/self.dest['y']-self.x))
+		self.heading = math.tanh((self.dest.x-self.x/self.dest.y-self.x))
 
 	# def in_range(self, entities, ignoredest=True):
 	# 	result = super(Fleet, self).in_range(entities)
