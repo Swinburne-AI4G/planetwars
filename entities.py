@@ -15,13 +15,13 @@ import math
 import uuid
 
 NEUTRAL_ID = 0
-FLEET_SPEED = 1
+FLEET_SPEED = 10
 
 class Entity():
 
 	''' Abstract class representing entities in the 2d game world.
-        See Fleet and Planet classes.
-    '''
+		See Fleet and Planet classes.
+	'''
 
 	def __init__(self, x, y, ID=None, owner=None, ships=0):
 		if ID:
@@ -36,7 +36,7 @@ class Entity():
 			self.owner = owner
 		else:
 			self.owner = NEUTRAL_ID
-		# self.vision_age = 0
+		self.vision_age = 0
 		# self.was_battle = False
 		# self._name = "%s:%s" % (type(self).__name__, str(id))
 
@@ -61,10 +61,10 @@ class Entity():
 	def remove_ships(self, ships):
 		if ships <= 0:
 			raise ValueError("%s (owner %s) tried to send %d ships (of %d)." %
-			                 (self.ID, self.owner, ships, self.ships))
+							 (self.ID, self.owner, ships, self.ships))
 		if self.ships < ships:
 			raise ValueError("%s (owner %s) can't remove more ships (%d) then it has (%d)!" %
-			                 (self.ID, self.owner, ships, self.ships))
+							 (self.ID, self.owner, ships, self.ships))
 		self.ships -= ships
 
 	def add_ships(self, ships):
@@ -90,10 +90,10 @@ class Entity():
 class Planet(Entity):
 
 	''' A planet in the game world. When occupied by a player, the planet
-        creates new ships each time step (when `update` is called). Each
-        planet also has a `vision_range` which is partially proportional
-        to the growth rate (size).
-    '''
+		creates new ships each time step (when `update` is called). Each
+		planet also has a `vision_range` which is partially proportional
+		to the growth rate (size).
+	'''
 
 	def __init__(self, x, y, ID=None, owner=None, ships=None, growth=1):
 		super().__init__(x, y, ID, owner, ships)
@@ -111,20 +111,17 @@ class Planet(Entity):
 		self.was_battle = False
 
 	def vision_range(self):
-		''' The size of the planet will add some vision range with the formula:
-            totalrange = PLANET_RANGE + (planet.growth_rate * PLANET_FACTOR)
-        '''
 		return self.ships
 
 
 class Fleet(Entity):
 	''' A fleet in the game world. Each fleet is owned by a player and launched
-        from either a planet or a fleet (mid-flight). All fleets move at the
-        same speed each game step.
+		from either a planet or a fleet (mid-flight). All fleets move at the
+		same speed each game step.
 
-        Fleet id values are deliberately obscure (using UUID) to remove any
-        possible value an enemy players might gather from it.
-    '''
+		Fleet id values are deliberately obscure (using UUID) to remove any
+		possible value an enemy players might gather from it.
+	'''
 
 
 	def __init__(self, ID=None, owner=None, ships=None, src=None, dest=None, x=None, y=None):
@@ -133,8 +130,8 @@ class Fleet(Entity):
 			y or src.y, 
 			ID, owner, ships)
 		self.dest = dest
-		# we store heading because it is unlikely to change from tick to tick
-		self.heading = math.tanh((self.dest.x-self.x/self.dest.y-self.x))
+		# we cache heading because it is unlikely to change from tick to tick
+		self.heading = math.atan2((self.dest.y-self.y),(self.dest.x-self.x))
 
 	# def in_range(self, entities, ignoredest=True):
 	# 	result = super(Fleet, self).in_range(entities)
