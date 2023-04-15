@@ -1,7 +1,9 @@
 import pyglet
 from entities import NEUTRAL_ID
 
+
 PLANET_RADIUS_FACTOR = 20
+FLEET_SIZE_FACTOR = 0.5
 
 #region colours
 COLOR_NAMES = {
@@ -33,6 +35,7 @@ COLOR_NAMES_255 = {k: to_rgb(v) for k, v in COLOR_NAMES.items()}
 IMAGES = {
 	"background": "images/space.jpg",
 }
+
 
 class RenderableEntity:
 	def __init__(self, entity):
@@ -74,22 +77,34 @@ class RenderablePlanet(RenderableEntity):
 class RenderableFleet(RenderableEntity):
 	def __init__(self, fleet, batch, displayproperty, colour):
 		super().__init__(fleet)
+		triangle_half_size = FLEET_SIZE_FACTOR*fleet.ships//2
+		
+		#vector pointing straight up defines size of triangle
+		v_temp = pyglet.math.Vec2(triangle_half_size, 0)
+		#rotate vector to travel direction, v1 is then the 'forward' point of the triangle
+		self.v1 = v_temp.from_heading(fleet.heading)
+		
+		#same vector, a little shorter, forms the trailing points, each rotated 120deg off the travel direction
+		v_temp = pyglet.math.Vec2(triangle_half_size*.75, 0)
+		v_temp = v_temp.from_heading(fleet.heading)
+		v2 = v_temp.rotate(2.094)	#120 deg in radian
+		v3 = v_temp.rotate(-2.094)	#120 deg in radian
+		
 		self.triangle = pyglet.shapes.Triangle(
-				0,										#x
-				0 + fleet.ships * PLANET_RADIUS_FACTOR/2,	#y
-				0 + fleet.ships * PLANET_RADIUS_FACTOR/2,	#x2
-				0 - fleet.ships * PLANET_RADIUS_FACTOR/2,	#y2
-				0 - fleet.ships * PLANET_RADIUS_FACTOR/2,	#x3
-				0 - fleet.ships * PLANET_RADIUS_FACTOR/2,	#y3
-				color=colour,
-				batch=batch
-			)
-		self.triangle.anchor_x = fleet.x
-		self.triangle.anchor_y = fleet.y
+			self.v1.x,	#x
+			self.v1.y,	#y
+			v2.x,	#x2
+			v2.y,	#y2
+			v3.x,	#x3
+			v3.y,	#y3
+			color=colour,
+			batch=batch
+
+		)
 		self.label = pyglet.text.Label(
 			str(fleet.__getattribute__(displayproperty)),
 			x=fleet.x,
-			y=fleet.y+4,	#centering is weirdly off
+			y=fleet.y,
 			anchor_x="center", 
 			anchor_y="center",
 			batch=batch,
@@ -97,9 +112,11 @@ class RenderableFleet(RenderableEntity):
 		)
 
 	def update(self, displayproperty):
-		super.update(displayproperty)
-		self.triangle.anchor_x = self.entity.x
-		self.triangle.anchor_y = self.entity.y
+		super().update(displayproperty)
+		self.triangle.x = self.entity.x+self.v1.x
+		self.triangle.y = self.entity.y+self.v1.y
+		self.label.x=self.entity.x
+		self.label.y=self.entity.y
 
 class PlanetWarsEntityRenderer:
 	# handles drawing/cached pos/size of PlanetWars game instance for a GUI
@@ -129,6 +146,9 @@ class PlanetWarsEntityRenderer:
 		# update planet text labels
 		for planet in self.renderableplanets:
 			planet.update(self.displayproperty)
+		#update fleet positions & labels
+		for fleet in self.renderablefleets:
+			fleet.update(self.displayproperty)
 		# draw planets
 		self.batch.draw()
 
@@ -159,7 +179,7 @@ class PlanetWarsEntityRenderer:
 				))
 		self.game.dirty = False
 
-	def update():
+	def update(self):
 		#todo upate text labels after every game loop
 		pass
 
@@ -223,9 +243,7 @@ class PlanetWarsWindow(pyglet.window.Window):
 	def update(self, args):
 		# gets called by the scheduler at the step_fps interval set
 		if self.game:
-			if not self.game.paused:
-				self.gamerenderer.update()
-				self.game.update()
+			self.game.update()
 
 			# update step label
 			#should be in UI
@@ -273,7 +291,7 @@ class PlanetWarsWindow(pyglet.window.Window):
 			self.reset_space()
 		# Do one step
 		elif symbol == pyglet.window.key.N:
-			self.game.update()
+			self.game.update(manual=True)
 		# Pause toggle?
 		elif symbol == pyglet.window.key.P:
 			self.paused = not self.paused
