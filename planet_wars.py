@@ -32,17 +32,20 @@ class PlanetWarsGame():
 			for p in gamestate_json['players']:
 				self.players[p["ID"]] = Player(p["ID"], p["name"])
 
-		self.spawn_players()
-		#set initial facades
-		for player in self.players.values():
-			if player.ID != NEUTRAL_ID:
-				self.update_facade(player)
 
 		self.tick = 0
 		self.max_tick = 1000
 		self.winner = None
 		self.dirty = True
 		self.paused = True
+
+		self.spawn_players()
+		#set initial facades
+		for player in self.players.values():
+			if player.ID != NEUTRAL_ID:
+				self.update_facade(player)
+
+		
 
 	def spawn_players(self):
 		players_to_be_spawned = []
@@ -93,9 +96,10 @@ class PlanetWarsGame():
 	# adds target to an entity dict (defaults to deepcopy) 
 	# if it is in vision_range of src
 	# does not add if:
-	#	- they have the same owner (force param overrides this behaviour)
+	#	- they have the same owner (force/update param overrides this behaviour)
 	#	- target already exists in entity_list
-	def add_to_vision_list(self, src, target, entity_dict, force=False, shallowcpy=False):
+	# return True if planet aded, False otherwise
+	def add_to_vision_list(self, src, target, entity_dict, force=False, update=True, shallowcpy=False):
 		if shallowcpy:
 			_copy = copy.copy
 		else:
@@ -104,15 +108,18 @@ class PlanetWarsGame():
 		if src.owner == target.owner:
 			if force:
 				entity_dict[target.ID] = _copy(target)
-			return
+				return True
+			return False
 		
 		#skip planets that have already be seen by something else
-		if target.ID not in entity_dict.facade.planets or force:
+		if force or update or target.ID not in entity_dict.facade.planets:
 			#check vision range and add if visible
 			if src.distance_to(target) < src.vision_range()**2:
 				entity_dict[target.ID] == copy.deepcopy(target)
+				return True
 
 	def update_facade(self, player):
+		player.tick = self.tick
 		if len(player.planets) == 0:
 			#player starts the game with knowledge of the inital state of all planets
 			#TODO: this shouldn't be the case if the game is loaded from a later state
@@ -121,27 +128,39 @@ class PlanetWarsGame():
 			for planet in self.planets.values():
 				if planet.owner == player.ID:
 					#you can see a planet if you own it
-					player.planets[planet.ID] == copy.deepcopy(planet)
-				else:
+					player.planets[planet.ID] = copy.deepcopy(planet)
 					#check what other planets this planet can see
 					for other in self.planets.values():
-						self.add_to_vision_list(planet, other, player.planets)
+						if self.add_to_vision_list(planet,other, player.planets):
+							player.planets[planet.ID].vision_age = 0
+						else:
+							player.planets[planet.ID].vision_age +=1
 					#same logic, but for fleets
 					for other in self.fleets.values():
-						self.add_to_vision_list(planet, other, player.fleets)
+						if self.add_to_vision_list(planet, other, player.fleets):
+							player.planets[planet.ID].vision_age = 0
+						else:
+							player.planets[planet.ID].vision_age +=1
+
 
 		player.fleets = {} #no memory of fleets last locations
 		for fleet in self.fleets.values():
 			if fleet.owner == player.ID:
 				#you can see a fleet if you own it
-				player.planets[planet.ID] == copy.deepcopy(planet)
-			else:
+				player.fleets[fleet.ID] = copy.deepcopy(fleet)
 				#check what other planets this fleet can see
 				for other in self.planets.values():
-					self.add_to_vision_list(fleet, other, player.planets)
+					if self.add_to_vision_list(fleet, other, player.planets):
+						player.planets[planet.ID].vision_age = 0
+					else:
+						player.planets[planet.ID].vision_age +=1
+
 				#same logic, but for fleets
 				for other in self.fleets.values():
-					self.add_to_vision_list(fleet, other, player.fleets)
+					if self.add_to_vision_list(fleet, other, player.fleets):
+						player.planets[planet.ID].vision_age = 0
+					else:
+						player.planets[planet.ID].vision_age +=1
 
 	#def __str__(self):
 	#	# todo: this doesn't match the _parse_gamestate_text format anymore
@@ -155,13 +174,17 @@ class PlanetWarsGame():
 	#										  f.total_trip_length, f.turns_remaining))
 	#	return "\n".join(s)
 
-	def update(self, t=None):
+	def update(self, t=None, manual=False):
+		if self.paused and not manual:
+			return
 		# phase 0, Give each player (controller) a chance to create new fleets
 		for player in self.players.values():
-			player.update()
+			if player.ID != NEUTRAL_ID:
+				player.update()
 		# phase 1, Retrieve and process all pending orders from each player
 		for player in self.players.values():
-			self._process_orders(player)
+			if player.ID != NEUTRAL_ID:
+				self._process_orders(player)
 		# phase 2, Planet ship number growth (advancement)
 		for planet in self.planets.values():
 			planet.update()
@@ -175,42 +198,42 @@ class PlanetWarsGame():
 		for p, fleets in arrivals.items():
 			forces = collections.defaultdict(int)
 			# add the current occupier of the planet
-			forces[p.owner_id] = p.ships
+			forces[p.owner] = p.ships
 			# add arriving fleets
 			for f in fleets:
-				self.fleets.pop(f.id)
-				forces[f.owner_id] += f.ships
+				self.fleets.pop(f.ID)
+				forces[f.owner] += f.ships
 			# Simple reinforcements?
 			if len(forces) == 1:
-				p.ships = forces[p.owner_id]
+				p.ships = forces[p.owner]
 			# Battle!
 			else:
 				# There are at least 2 forces, maybe more. Biggest force is winner.
 				# Gap between 1st and 2nd is the remaining force. (The rest cancel each out.)
 				result = sorted([(v, k) for k, v in forces.items()], reverse=True)
-				winner_id = result[0][1]
+				winner = result[0][1]
 				gap_size = result[0][0] - result[1][0]
 				# If meaningful outcome, log it
-				if winner_id == 0:  # neutral defense - log nothing
+				if winner == 0:  # neutral defense - log nothing
 					pass
-				elif winner_id == p.owner_id:
+				elif winner == p.owner:
 					self.turn_log(
-						"{0:4d}: Player {1} defended planet {2}".format(self.tick, winner_id, p.id))
+						"{0:4d}: Player {1} defended planet {2}".format(self.tick, winner, p.ID))
 				else:
 					self.turn_log(
-						"{0:4d}: Player {1} now owns planet {2}".format(self.tick, winner_id, p.id))
+						"{0:4d}: Player {1} now owns planet {2}".format(self.tick, winner, p.ID))
 					#if the planet changed hands, we have to change how it is rendered
 					self.dirty = True
 				# Set the new winner
-				p.owner_id = winner_id
+				p.owner_id = winner
 				p.ships = gap_size
 				p.was_battle = True
 		# phase 5, Update the game tick count.
 		self.tick += 1
 		# phase 6, Resync current facade view of the map for each player
 		for player in self.players.values():
-			pass
-			#self._sync_player_view(player)
+			if player.ID != NEUTRAL_ID:
+				self.update_facade(player)
 
 	def _sync_player_view(self, player):
 		player.tick = self.tick
