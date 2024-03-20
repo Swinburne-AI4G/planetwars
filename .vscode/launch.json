@@ -6,19 +6,19 @@
 	"configurations": [
 		{
 			"name": "PlanetWars",
-			"type": "python",
+			"type": "debugpy",
 			"request": "launch",
-			"program": "main.py",
+			"program": "${workspaceFolder}\\main.py",
 			"console": "integratedTerminal",
 			"justMyCode": true,
-			"cwd": "${fileDirname}",
+			"cwd": "${workspaceFolder}",
 			"args": [
 				"--gui",
 				"-m",
 				"map001",
 				"-p",
 				"Blanko",
-				"OneMove"
+				"OneSlowMove"
 			]
 		}
 	]
