@@ -6,7 +6,6 @@ from planet_wars_draw import PLANET_RADIUS_FACTOR
 
 
 class PlanetWarsGame():
-
 	def __init__(self, gamestate_json):
 		self.planets = {}
 		for p in gamestate_json['planets']:
@@ -115,7 +114,7 @@ class PlanetWarsGame():
 		if force or update or target.ID not in entity_dict.facade.planets:
 			#check vision range and add if visible
 			if src.distance_to(target) < src.vision_range()**2:
-				entity_dict[target.ID] == copy.deepcopy(target)
+				entity_dict[target.ID] = copy.deepcopy(target)
 				return True
 
 	def update_facade(self, player):
@@ -132,15 +131,13 @@ class PlanetWarsGame():
 					#check what other planets this planet can see
 					for other in self.planets.values():
 						if self.add_to_vision_list(planet,other, player.planets):
-							player.planets[planet.ID].vision_age = 0
+							player.planets[other.ID].vision_age = 0
 						else:
-							player.planets[planet.ID].vision_age +=1
+							player.planets[other.ID].vision_age +=1
 					#same logic, but for fleets
 					for other in self.fleets.values():
 						if self.add_to_vision_list(planet, other, player.fleets):
-							player.planets[planet.ID].vision_age = 0
-						else:
-							player.planets[planet.ID].vision_age +=1
+							player.fleets[other.ID].vision_age = 0
 
 
 		player.fleets = {} #no memory of fleets last locations
@@ -159,8 +156,6 @@ class PlanetWarsGame():
 				for other in self.fleets.values():
 					if self.add_to_vision_list(fleet, other, player.fleets):
 						player.planets[planet.ID].vision_age = 0
-					else:
-						player.planets[planet.ID].vision_age +=1
 
 	#def __str__(self):
 	#	# todo: this doesn't match the _parse_gamestate_text format anymore
@@ -192,7 +187,7 @@ class PlanetWarsGame():
 		arrivals = collections.defaultdict(list)
 		for f in self.fleets.values():
 			f.update()
-			if f.distance_to(f.dest) <= PLANET_RADIUS_FACTOR:
+			if f.distance_to(f.dest) <= ((f.dest.growth+1) * PLANET_RADIUS_FACTOR)**2:
 				arrivals[f.dest].append(f)
 		# phase 4, Collate fleet arrivals and planet forces by owner
 		for p, fleets in arrivals.items():
@@ -203,31 +198,33 @@ class PlanetWarsGame():
 			for f in fleets:
 				self.fleets.pop(f.ID)
 				forces[f.owner] += f.ships
-			# Simple reinforcements?
+			#no battle, just reinforce
 			if len(forces) == 1:
+				self.turn_log(
+					"{0:4d}: Player {1} reinforced planet {2}".format(self.tick, p.owner, p.ID))
 				p.ships = forces[p.owner]
-			# Battle!
 			else:
+				# Battle!
 				# There are at least 2 forces, maybe more. Biggest force is winner.
 				# Gap between 1st and 2nd is the remaining force. (The rest cancel each out.)
 				result = sorted([(v, k) for k, v in forces.items()], reverse=True)
 				winner = result[0][1]
 				gap_size = result[0][0] - result[1][0]
+				if gap_size == 0: 
+					winner = p.owner #if the planet winds up on 0, it stays with the current owner
 				# If meaningful outcome, log it
-				if winner == 0:  # neutral defense - log nothing
-					pass
-				elif winner == p.owner:
+				if winner == p.owner:
 					self.turn_log(
 						"{0:4d}: Player {1} defended planet {2}".format(self.tick, winner, p.ID))
 				else:
 					self.turn_log(
 						"{0:4d}: Player {1} now owns planet {2}".format(self.tick, winner, p.ID))
-					#if the planet changed hands, we have to change how it is rendered
-					self.dirty = True
-				# Set the new winner
-				p.owner_id = winner
+				# Set the new owner
+				p.owner = winner
 				p.ships = gap_size
-				p.was_battle = True
+			# Either a planet changed hands or was defended/reinforced
+			#either way fleets/planets rendering need to be updated
+			self.dirty = True
 		# phase 5, Update the game tick count.
 		self.tick += 1
 		# phase 6, Resync current facade view of the map for each player

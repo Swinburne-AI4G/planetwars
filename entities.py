@@ -14,7 +14,7 @@ Fleets are always owned by one of the players.
 import math
 import uuid
 
-NEUTRAL_ID = 0
+NEUTRAL_ID = '0'
 FLEET_SPEED = 10
 
 class Entity():
@@ -37,7 +37,6 @@ class Entity():
 		else:
 			self.owner = NEUTRAL_ID
 		self.vision_age = 0
-		# self.was_battle = False
 		# self._name = "%s:%s" % (type(self).__name__, str(id))
 
 
@@ -108,7 +107,6 @@ class Planet(Entity):
 		''' If the planet is owned, grow the number of ships (advancement). '''
 		if self.owner != NEUTRAL_ID:
 			self.add_ships(self.growth)
-		self.was_battle = False
 
 	def vision_range(self):
 		return self.ships

@@ -10,7 +10,8 @@ contact: cwoodward@swin.edu.au
 Updated 2023
 - Added pyglet 2.x graphics support
 - Made data interfaces JSON
-
+Updated 2024
+- Refactor
 """
 
 from planet_wars import PlanetWarsGame
@@ -29,7 +30,7 @@ if __name__ == "__main__":
 						Created by 
 						Michale Jensen (2011)
 						Clinton Woodward (2012)
-						James Bonner (2023)
+						James Bonner (2023/4)
 						contact: cwoodward@swin.edu.au""",
 		formatter_class=argparse.RawDescriptionHelpFormatter,
 	)

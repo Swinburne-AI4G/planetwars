@@ -2,7 +2,7 @@ import pyglet
 from entities import NEUTRAL_ID
 
 
-PLANET_RADIUS_FACTOR = 20
+PLANET_RADIUS_FACTOR = 15
 FLEET_SIZE_FACTOR = 0.5
 
 #region colours
@@ -51,15 +51,17 @@ class RenderablePlanet(RenderableEntity):
 			pyglet.shapes.Circle(
 				planet.x,
 				planet.y,
-				planet.growth * PLANET_RADIUS_FACTOR,
+				(planet.growth+1) * PLANET_RADIUS_FACTOR,
 				color=COLOR_NAMES_255["WHITE"],
+				segments=40,
 				batch=batch
 			),
 			pyglet.shapes.Circle(
 				planet.x,
 				planet.y,
-				planet.growth * PLANET_RADIUS_FACTOR-1,
+				(planet.growth+1) * PLANET_RADIUS_FACTOR-2,
 				color=colour,
+				segments=40,
 				batch=batch
 			)
 		]
@@ -77,7 +79,7 @@ class RenderablePlanet(RenderableEntity):
 class RenderableFleet(RenderableEntity):
 	def __init__(self, fleet, batch, displayproperty, colour):
 		super().__init__(fleet)
-		triangle_half_size = FLEET_SIZE_FACTOR*fleet.ships//2
+		triangle_half_size = min(max(FLEET_SIZE_FACTOR*fleet.ships//2, 15), 200)
 		
 		#vector pointing straight up defines size of triangle
 		v_temp = pyglet.math.Vec2(triangle_half_size, 0)
@@ -90,7 +92,7 @@ class RenderableFleet(RenderableEntity):
 		v2 = v_temp.rotate(2.094)	#120 deg in radian
 		v3 = v_temp.rotate(-2.094)	#120 deg in radian
 		
-		self.triangle = pyglet.shapes.Triangle(
+		self.triangle = (pyglet.shapes.Triangle(
 			self.v1.x,	#x
 			self.v1.y,	#y
 			v2.x,	#x2
@@ -99,8 +101,7 @@ class RenderableFleet(RenderableEntity):
 			v3.y,	#y3
 			color=colour,
 			batch=batch
-
-		)
+		))
 		self.label = pyglet.text.Label(
 			str(fleet.__getattribute__(displayproperty)),
 			x=fleet.x,
