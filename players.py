@@ -24,8 +24,8 @@ class Player(object):
 		self.orders = []
 		self.ships = 0
 		self._alive = True
-		self.planets = {}
-		self.fleets = {}
+		self.planets = {}	#actually the planets in the facade.. rename?
+		self.fleets = {}	#actually the fleets in the facade.. rename?
 
 		if self.ID != NEUTRAL_ID:
 			# Create a controller object based on the name

@@ -76,7 +76,7 @@ if __name__ == "__main__":
 		f = open(filename, "r+")
 		gamestate = json.loads(f.read())
 	else:
-		# generate random map
+		#TODO: generate random map
 		pass
 
 	if not "players" in gamestate:
