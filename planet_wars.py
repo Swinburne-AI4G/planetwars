@@ -319,14 +319,18 @@ class PlanetWarsGame():
 
 	def is_alive(self):
 		''' Return True if two or more players are still alive. '''
-		#why are we asking the players if they're alive?
-		#status = [p for p in self.players.values() if p.is_alive()]
-		#if len(status) == 1:
-		#	self.winner = status[0]
-		#	return False
-		#else:
-		#	return True
-		return True
+		living_players = []
+		for planet in self.planets.values():
+			if planet.owner != NEUTRAL_ID and planet.owner not in living_players:
+				living_players.append(planet.owner)
+				if len(living_players) > 1:
+					return True
+		for fleet in self.fleets.values():
+			if fleet.owner != NEUTRAL_ID and fleet.owner not in living_players:
+				living_players.append(fleet.owner)
+				if len(living_players) > 1:
+					return True
+		return False
 
 	def turn_log(self, msg):
 		pass
