@@ -1,9 +1,11 @@
 import pyglet
-from entities import NEUTRAL_ID
+from entities import NEUTRAL_ID, SCALE_FACTOR
 
 
 PLANET_RADIUS_FACTOR = 15
 FLEET_SIZE_FACTOR = 0.5
+WINDOW_X = 1000
+WINDOW_Y = 800
 
 #region colours
 COLOR_NAMES = {
@@ -40,6 +42,8 @@ IMAGES = {
 class RenderableEntity:
 	def __init__(self, entity):
 		self.entity = entity
+		self.x = ((entity.x/SCALE_FACTOR-0.5)*0.9+0.5)*WINDOW_X	#convert from game space to render space
+		self.y = ((entity.y/SCALE_FACTOR-0.5)*0.9+0.5)*WINDOW_Y
 
 	def update(self, displayproperty):
 		self.label.text = str(self.entity.__getattribute__(displayproperty))
@@ -49,16 +53,16 @@ class RenderablePlanet(RenderableEntity):
 		super().__init__(planet)
 		self.circles = [
 			pyglet.shapes.Circle(
-				planet.x,
-				planet.y,
+				self.x,
+				self.y,
 				(planet.growth+1) * PLANET_RADIUS_FACTOR,
 				color=COLOR_NAMES_255["WHITE"],
 				segments=40,
 				batch=batch
 			),
 			pyglet.shapes.Circle(
-				planet.x,
-				planet.y,
+				self.x,
+				self.y,
 				(planet.growth+1) * PLANET_RADIUS_FACTOR-2,
 				color=colour,
 				segments=40,
@@ -67,8 +71,8 @@ class RenderablePlanet(RenderableEntity):
 		]
 		self.label = pyglet.text.Label(
 			str(planet.__getattribute__(displayproperty)),
-			x=planet.x,
-			y=planet.y+4,	#centering is weirdly off
+			x=self.x-2,
+			y=self.y+4,	#centering is weirdly off
 			anchor_x="center", 
 			anchor_y="center",
 			batch=batch
@@ -79,7 +83,7 @@ class RenderablePlanet(RenderableEntity):
 class RenderableFleet(RenderableEntity):
 	def __init__(self, fleet, batch, displayproperty, colour):
 		super().__init__(fleet)
-		triangle_half_size = min(max(FLEET_SIZE_FACTOR*fleet.ships//2, 15), 200)
+		triangle_half_size = min(max(FLEET_SIZE_FACTOR*fleet.ships//2, 15), 190)
 		
 		#vector pointing straight up defines size of triangle
 		v_temp = pyglet.math.Vec2(triangle_half_size, 0)
@@ -104,8 +108,8 @@ class RenderableFleet(RenderableEntity):
 		))
 		self.label = pyglet.text.Label(
 			str(fleet.__getattribute__(displayproperty)),
-			x=fleet.x,
-			y=fleet.y,
+			x=self.x,
+			y=self.y,
 			anchor_x="center", 
 			anchor_y="center",
 			batch=batch,
@@ -114,10 +118,10 @@ class RenderableFleet(RenderableEntity):
 
 	def update(self, displayproperty):
 		super().update(displayproperty)
-		self.triangle.x = self.entity.x+self.v1.x
-		self.triangle.y = self.entity.y+self.v1.y
-		self.label.x=self.entity.x
-		self.label.y=self.entity.y
+		self.triangle.x = self.x+self.v1.x
+		self.triangle.y = self.y+self.v1.y
+		self.label.x=self.x
+		self.label.y=self.y
 
 class PlanetWarsEntityRenderer:
 	# handles drawing/cached pos/size of PlanetWars game instance for a GUI
@@ -201,25 +205,15 @@ class PlanetWarsWindow(pyglet.window.Window):
 
 	def __init__(self, game):
 		self.game = game
-		#get the window size based on the space occupied by the planets
-		self.extent = {'x': 0, 'y': 0, 'w': 0, 'h': 0}
-		# if planets have negative coords, we don't draw them
-		for planet in self.game.planets.values():
-			if planet.x > self.extent['w']:
-				self.extent['w'] = planet.x
-			if planet.y > self.extent['h']:
-				self.extent['h'] = planet.y
-		#add a margin so no planet is drawn off the edge of the screen
-		self.extent['w'] += 50
-		self.extent['h'] += 50
 
 		#init the Pyglet window
 		super(PlanetWarsWindow, self).__init__(
-			self.extent["w"],
-			self.extent["h"],
+			WINDOW_X,
+			WINDOW_Y,
 			vsync=True,
 			resizable=False,
 			caption="Planet Wars",
+			config=pyglet.gl.Config(double_buffer=True, sample_buffers=1, samples=8) #antialiasing. TODO enable fallback if graphics card doesn't support
 		)
 		#set our location on the screen
 		#we use game.extent directly to set screen size opn the previous line,
@@ -263,7 +257,7 @@ class PlanetWarsWindow(pyglet.window.Window):
 			# Has the game ended? (Should we close?)
 			if not self.game.is_alive() or self.game.tick >= self.game.max_tick:
 				self.close()
-			if self.game.dirty:
+			if self.game.dirty or True: #or True bypasses game.dirty render optimisation - TODO: figure out a way to bring it back
 				self.gamerenderer.sync_all()
 		else:
 			self.step_label.text = "---"
@@ -272,13 +266,15 @@ class PlanetWarsWindow(pyglet.window.Window):
 	def on_key_press(self, symbol, modifiers):
 		# Single Player View, or All View
 		if symbol == pyglet.window.key.BRACKETLEFT:
-			self.view_id = (
-				self.view_id - 1 if self.view_id > 1 else len(self.game.players)
-			)
+			if self.view_id > 0:
+				self.view_id - 1
+			else:
+				self.view_id = len(self.game.players)
 		if symbol == pyglet.window.key.BRACKETRIGHT:
-			self.view_id = (
-				self.view_id + 1 if self.view_id < len(self.game.players) else 1
-			)
+			if self.view_id < len(self.game.players):
+				self.view_id + 1
+			else:
+				self.view_id = 0
 		# Everyone view
 		elif symbol == pyglet.window.key.A:
 			self.view_id = 0  # == "all"
@@ -295,7 +291,7 @@ class PlanetWarsWindow(pyglet.window.Window):
 			self.game.update(manual=True)
 		# Pause toggle?
 		elif symbol == pyglet.window.key.P:
-			self.paused = not self.paused
+			self.game.paused = not self.game.paused
 		# Speed up (+) or slow down (-) the sim
 		elif symbol in [pyglet.window.key.PLUS, pyglet.window.key.EQUAL]:
 			self.set_fps(pyglet.window.fps + 5)

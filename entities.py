@@ -15,10 +15,12 @@ import math
 import uuid
 
 NEUTRAL_ID = '0'
-FLEET_SPEED = 10
+FLEET_SPEED = 20
+SCALE_FACTOR = 1000
 
 class Entity():
 
+	
 	''' Abstract class representing entities in the 2d game world.
 		See Fleet and Planet classes.
 	'''
@@ -29,8 +31,8 @@ class Entity():
 		else:
 			self.ID = str(uuid.uuid1())
 
-		self.x = x
-		self.y = y
+		self.x = x*SCALE_FACTOR
+		self.y = y*SCALE_FACTOR
 		self.ships = ships
 		if owner:
 			self.owner = owner
@@ -96,11 +98,6 @@ class Planet(Entity):
 
 	def __init__(self, x, y, ID=None, owner=None, ships=None, growth=1):
 		super().__init__(x, y, ID, owner, ships)
-		if self.x < 50:
-			print("Planet is close to or beyond the bottom of the renderable area")
-		if self.x < 50:
-			print("Planet is close to or beyond the left of the renderable area")
-
 		self.growth = growth
 
 	def update(self):
@@ -124,8 +121,8 @@ class Fleet(Entity):
 
 	def __init__(self, ID=None, owner=None, ships=None, src=None, dest=None, x=None, y=None):
 		super().__init__(
-			x or src.x, 
-			y or src.y, 
+			x or src.x/SCALE_FACTOR,
+			y or src.y/SCALE_FACTOR,
 			ID, owner, ships)
 		self.dest = dest
 		# we cache heading because it is unlikely to change from tick to tick
