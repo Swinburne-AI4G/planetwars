@@ -87,6 +87,15 @@ class Entity():
 	def __str__(self):
 		return "%s, owner: %s, ships: %d" % (self.ID, self.owner, self.ships)
 
+	def serialise(self):
+		return {
+			'ID': self.ID,
+			'owner': self.owner,
+			'ships': self.ships,
+			'x': self.x/SCALE_FACTOR,
+			'y': self.y/SCALE_FACTOR
+		}
+
 
 class Planet(Entity):
 
@@ -107,7 +116,11 @@ class Planet(Entity):
 
 	def vision_range(self):
 		return self.ships
-
+	
+	def serialise(self):
+		serial = super().serialise()
+		serial['growth'] = self.growth
+		return serial
 
 class Fleet(Entity):
 	''' A fleet in the game world. Each fleet is owned by a player and launched
@@ -143,3 +156,5 @@ class Fleet(Entity):
 		self.x += math.cos(self.heading) * FLEET_SPEED
 		self.y += math.sin(self.heading) * FLEET_SPEED
 
+	def serialise(self):
+		return super().serialise()

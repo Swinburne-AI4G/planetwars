@@ -21,7 +21,7 @@ import argparse
 import json
 import pathlib
 import uuid
-import copy
+import collections
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(
@@ -65,13 +65,13 @@ if __name__ == "__main__":
 		help="Adds a log output script. Could be used to make game ticks/actions human readable or to print statistics about the game states.",
 	)
 	parser.add_argument(
-		"--save_replay",
+		"--save-replay",
 		nargs="?",
 		default=argparse.SUPPRESS,
 		help="Saves a replay. Optional: filename (no extension) to save the replay to. If not provided, the replay is saved to the replays directory with a UUID filename.",
 	)
 	parser.add_argument(
-		"--max_ticks",
+		"--max-ticks",
 		type=int,
 		default=10000,
 		help="Saves a replay. Optional: filename (no extension) to save the replay to. If not provided, the replay is saved to the replays directory with a UUID filename.",
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
 	replay_object = None
 	if not args.replay and hasattr(args, "save_replay"):
-		replay_object = copy.deepcopy(gamestate)
+		replay_object = collections.defaultdict(list)
 		
 
 	game = PlanetWarsGame(gamestate, args.logscript, replay_object)

@@ -14,11 +14,14 @@
 			"cwd": "${workspaceFolder}",
 			"args": [
 				"--gui",
-				"-p",
-				"Blanko",
-				"OneSlowMove",
+				// "-p",
+				// "Blanko",
+				// "OneSlowMove",
+				// "--save-replay",
+				// "-m",
+				// "map001"
 				"-r",
-				"18b3b0f9-ecf7-11ee-a308-e848b8c82000"
+				"aaca4225-ed01-11ee-985c-e848b8c82000"
 			]
 		}
 	]

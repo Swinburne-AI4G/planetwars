@@ -3,7 +3,6 @@ import collections
 from entities import Planet, Fleet, NEUTRAL_ID
 from players import Player
 from planet_wars_draw import PLANET_RADIUS_FACTOR
-import json
 import uuid
 
 
@@ -44,9 +43,6 @@ class PlanetWarsGame():
 			cls = getattr(module, logger)		# ... the class
 			self.turn_log = cls().log
 
-		self.replay_object = replay_object
-		if self.replay_object:
-			self.replay_object["orders"] = []
 		self.tick = 0
 		self.max_ticks = gamestate_json.get('max_ticks')
 		self.winner = None
@@ -58,6 +54,21 @@ class PlanetWarsGame():
 		for player in self.players.values():
 			if player.ID != NEUTRAL_ID:
 				self.update_facade(player)
+
+		self.replay_object = replay_object
+		if self.replay_object is not None:
+			self.replay_object["orders"] = []
+			self.serialise_to_replay()
+
+	def serialise_to_replay(self):
+		# Save the initial state to the replay file
+		for planet in self.planets.values():
+			self.replay_object["planets"].append(planet.serialise())
+		for fleet in self.fleets.values():
+			self.replay_object["fleets"].append(fleet.serialise())
+		for player in self.players.values():
+			self.replay_object["players"].append(player.serialise())
+		
 
 	def spawn_players(self):
 		players_to_be_spawned = []
@@ -187,8 +198,10 @@ class PlanetWarsGame():
 			for player in self.players.values():
 				if player.ID != NEUTRAL_ID:
 					self._process_orders(player.orders, player)
+					player.orders = []
 		else:
 			self._process_orders(self.orders[self.tick])
+			del self.orders[self.tick]
 		# phase 2, Planet ship number growth (advancement)
 		for planet in self.planets.values():
 			planet.update()
@@ -289,14 +302,15 @@ class PlanetWarsGame():
 				Invalid orders are modified (ship number limit) or ignored.
 		'''
 		for order in orders:
-			if hasattr(order, "owner"):
-				player = self.players[order.owner]
-				o_type = order.type,
-				src_id = order.source,
-				new_id = order.new_fleet_id,
-				ships = order.ships,
-				dest_id = order.destination
-			else:
+			try:
+				# order is a dict
+				player = self.players[order["owner"]]
+				o_type = order['type']
+				src_id = order['source']
+				new_id = order['new_fleet_id']
+				ships = order['ships']
+				dest_id = order['destination']
+			except TypeError:
 				# TODO: update player orders to use some nice JSON
 				o_type, src_id, new_id, ships, dest_id = order
 			# Check for valid fleet or planet id?
@@ -355,8 +369,6 @@ class PlanetWarsGame():
 							}
 						)
 
-		# Done - clear orders.
-		player.orders = []
 
 	def is_alive(self):
 		''' Return True if two or more players are still alive. '''

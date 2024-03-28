@@ -37,6 +37,12 @@ class Player(object):
 
 	def __str__(self):
 		return "%s(id=%s)" % (self.name, str(self.id))
+	
+	def serialise(self):
+		return {
+			'ID': self.ID,
+			'name': self.name
+		}
 
 	def update(self):
 		# Assumes gameinfo facade details are ready - let the bot issue orders!
