@@ -255,7 +255,7 @@ class PlanetWarsWindow(pyglet.window.Window):
 
 			#self.step_label.text = msg
 			# Has the game ended? (Should we close?)
-			if not self.game.is_alive() or self.game.tick >= self.game.max_tick:
+			if not self.game.is_alive() or self.game.tick >= self.game.max_ticks:
 				self.close()
 			if self.game.dirty or True: #or True bypasses game.dirty render optimisation - TODO: figure out a way to bring it back
 				self.gamerenderer.sync_all()

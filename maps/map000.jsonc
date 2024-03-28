@@ -30,12 +30,14 @@
 	"orders": [
 		{
 			"ID": "",
-			"owner": 0, //Neutral Player cannot have orders
-			"name": "optinal", //an optional debug name
+			"tick": 0,	//tick this order is to be executed on
+			"owner": 0,	//Neutral Player cannot have orders
+			"name": "optional", //an optional debug name
+			"type": "planet/fleet", //the type of order. TODO: Remove. Should be determinable from source. 
 			//If source is a fleet ID, fleet will execute order. 
 			//If source is a planet ID, planet will execute order with a new fleet. Order will be created for new fleet.
 			"source": "object_id", //the ID of an object.
-			"destination": "object_if or {x,y}" // the ID of an object or a {x,y} coordinates 
+			"destination": "object_id or {x,y}" // the ID of an object or a {x,y} coordinates 
 		}
 	],
 	"log": [
