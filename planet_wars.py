@@ -147,6 +147,7 @@ class PlanetWarsGame():
 				return True
 
 	def update_facade(self, player):
+		player.fleets = {}  # no memory of fleets last locations
 		player.tick = self.tick
 		if len(player.planets) == 0:
 			# player starts the game with knowledge of the inital state of all planets
@@ -168,7 +169,6 @@ class PlanetWarsGame():
 						if self.add_to_vision_list(planet, other, player.fleets):
 							player.fleets[other.ID].vision_age = 0
 
-		player.fleets = {}  # no memory of fleets last locations
 		for fleet in self.fleets.values():
 			if fleet.owner == player.ID:
 				# you can see a fleet if you own it
@@ -183,7 +183,7 @@ class PlanetWarsGame():
 				# same logic, but for fleets
 				for other in self.fleets.values():
 					if self.add_to_vision_list(fleet, other, player.fleets):
-						player.planets[planet.ID].vision_age = 0
+						player.fleets[other.ID].vision_age = 0
 
 	def update(self, t=None, manual=False):
 		if self.paused and not manual:
@@ -254,39 +254,6 @@ class PlanetWarsGame():
 		for player in self.players.values():
 			if player.ID != NEUTRAL_ID:
 				self.update_facade(player)
-
-	def _sync_player_view(self, player):
-		player.tick = self.tick
-		# find out which planets / fleets are currently in view
-		planetsinview = set()
-		fleetsinview = set()
-		for planet in self.planets.values():
-			if planet.owner == player.ID:
-				planetsinview.update(planet.in_range(self.planets.values()))
-				fleetsinview.update(planet.in_range(self.fleets.values()))
-		for fleet in self.fleets.values():
-			# ignore old fleets
-			if (fleet.owner_id == player.id) and (fleet.id in self.fleets):
-				planetsinview.update(fleet.in_range(self.planets.values()))
-				fleetsinview.update(fleet.in_range(self.fleets.values()))
-
-		# update (recopy) new details for all planets in view
-		# Increase vision_age of planets that are no longer in view
-		for p_id, planet in player.planets.items():
-			if p_id in planetsinview:
-				player.planets[p_id] = self.planets[p_id].copy()
-				player.planets[p_id].vision_age = 0
-			else:
-				if planet.owner_id == player.id:  # lost planet?
-					# let player know winner
-					planet.owner_id = self.planets[p_id].owner_id
-				planet.vision_age += 1
-		# clear old fleet list, (if they aren't in view they disappear), copy in view
-		player.fleets.clear()
-		for f_id in fleetsinview:
-			player.fleets[f_id] = self.fleets[f_id].copy()
-		# get the player to update their gameinfo with new details
-		player.refresh_gameinfo()
 
 	def _process_orders(self, orders, player=None):
 		''' Process all pending orders for the player, then clears the orders.

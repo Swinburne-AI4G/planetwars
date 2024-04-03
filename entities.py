@@ -115,7 +115,7 @@ class Planet(Entity):
 			self.add_ships(self.growth)
 
 	def vision_range(self):
-		return self.ships
+		return 100+50*self.growth+self.ships
 	
 	def serialise(self):
 		serial = super().serialise()
@@ -148,7 +148,7 @@ class Fleet(Entity):
 	# 	return result
 
 	def vision_range(self):
-		return self.ships
+		return 50+self.ships*2.5
 
 	def update(self):
 		''' Move the fleet (progress) by one game time step.'''

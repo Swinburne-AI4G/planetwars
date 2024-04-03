@@ -2,8 +2,8 @@ import pyglet
 from entities import NEUTRAL_ID, SCALE_FACTOR
 
 
-PLANET_RADIUS_FACTOR = 15
-FLEET_SIZE_FACTOR = 0.5
+PLANET_RADIUS_FACTOR = 12
+FLEET_SIZE_FACTOR = 0.25
 WINDOW_X = 1000
 WINDOW_Y = 800
 
@@ -83,7 +83,7 @@ class RenderablePlanet(RenderableEntity):
 class RenderableFleet(RenderableEntity):
 	def __init__(self, fleet, batch, displayproperty, colour):
 		super().__init__(fleet)
-		triangle_half_size = min(max(FLEET_SIZE_FACTOR*fleet.ships//2, 15), 190)
+		triangle_half_size = min(max(FLEET_SIZE_FACTOR*fleet.ships//2, 10), 50)
 		
 		#vector pointing straight up defines size of triangle
 		v_temp = pyglet.math.Vec2(triangle_half_size, 0)
@@ -142,6 +142,7 @@ class PlanetWarsEntityRenderer:
 					break
 		self.batch = pyglet.graphics.Batch()
 		self.displayproperty = "ships"
+		self.view_id = 0
 		self.sync_all()
 
 	def draw(self):
@@ -161,8 +162,19 @@ class PlanetWarsEntityRenderer:
 		#sync_all and dirty are used to update the renderer when:
 		#planet ownership changes
 		#fleets are created and destroyed
+		#TODO: this is actually called every tick, which is not ideal
+		if self.view_id == 0:
+			planets = self.game.planets.values()
+			fleets = self.game.fleets.values()
+		else:
+			player = list(self.game.players.keys())[self.view_id-1]
+			planets = self.game.players[player].planets.values()
+			fleets = self.game.players[player].fleets.values()
+			
+
+
 		self.renderableplanets = []
-		for p in self.game.planets.values():
+		for p in planets:
 			#something something view type
 			self.renderableplanets.append(
 				RenderablePlanet(
@@ -173,7 +185,7 @@ class PlanetWarsEntityRenderer:
 				))
 
 		self.renderablefleets = []
-		for f in self.game.fleets.values():
+		for f in fleets:
 			#something something view type
 			self.renderablefleets.append(
 				RenderableFleet(
@@ -190,7 +202,6 @@ class PlanetWarsEntityRenderer:
 
 
 class PlanetWarsUI:
-
 	def __init__(self, window):
 		self.fps_display = pyglet.window.FPSDisplay(window)
 		self.step_label = pyglet.text.Label(
@@ -230,62 +241,54 @@ class PlanetWarsWindow(pyglet.window.Window):
 		#load the renderer for game elements
 		self.gamerenderer = PlanetWarsEntityRenderer(self.game, self)
 
-		self.view_id = 0 #TODO: should be in gamerenderer?
-
 		pyglet.clock.schedule_interval(self.update, 1/60.)
 		pyglet.app.run()
 
 	def update(self, args):
+		# update step label
+		msg = "Step:" + str(self.game.tick)
+		if self.game.paused:
+			msg += " [PAUSED]"
+		msg += f'  --  POV: [{self.gamerenderer.view_id}] '
+		if self.gamerenderer.view_id == 0:
+			msg += 'ALL'
+		else:
+			view_id = list(self.game.players.keys())[self.gamerenderer.view_id-1]
+			msg += self.game.players[view_id].name
+		msg += "  --  Show: " + self.gamerenderer.displayproperty
+		self.ui.step_label.text = msg
+		
 		# gets called by the scheduler at the step_fps interval set
 		if self.game:
 			self.game.update()
-
-			# update step label
-			#should be in UI
-			msg = "Step:" + str(self.game.tick)
-			if self.game.paused:
-				msg += " [PAUSED]"
-			msg += f' -- POV: [{self.view_id}] '
-			if self.view_id in self.game.players:
-				msg += f' BOT = {self.game.players[self.view_id].name}'
-			elif self.view_id == 0:
-				msg += ' All '
-			msg += str(self.game.tick)
-			msg += " Show: " + self.gamerenderer.displayproperty
-
-			#self.step_label.text = msg
 			# Has the game ended? (Should we close?)
 			if not self.game.is_alive() or self.game.tick >= self.game.max_ticks:
 				self.close()
 			if self.game.dirty or True: #or True bypasses game.dirty render optimisation - TODO: figure out a way to bring it back
 				self.gamerenderer.sync_all()
-		else:
-			self.step_label.text = "---"
 
 
 	def on_key_press(self, symbol, modifiers):
 		# Single Player View, or All View
+		#TODO: Pass input into GameRenderer
 		if symbol == pyglet.window.key.BRACKETLEFT:
-			if self.view_id > 0:
-				self.view_id - 1
+			if self.gamerenderer.view_id > 0:
+				self.gamerenderer.view_id -= 1
 			else:
-				self.view_id = len(self.game.players)
+				self.gamerenderer.view_id = len(self.game.players)
 		if symbol == pyglet.window.key.BRACKETRIGHT:
-			if self.view_id < len(self.game.players):
-				self.view_id + 1
+			if self.gamerenderer.view_id < len(self.game.players):
+				self.gamerenderer.view_id += 1
 			else:
-				self.view_id = 0
+				self.gamerenderer.view_id = 0
 		# Everyone view
 		elif symbol == pyglet.window.key.A:
-			self.view_id = 0  # == "all"
+			self.gamerenderer.view_id = 0  # == "all"
 		# Planet attribute type to show?
 		elif symbol == pyglet.window.key.L:
-			i = self.label_type
-			l = ["id", "ships", "vision_age", "owner_id"]
-			self.label_type = l[l.index(i) + 1] if l.index(i) < (len(l) - 1) else l[0]
-		# Reset?
-		elif symbol == pyglet.window.key.R:
-			self.reset_space()
+			i = self.gamerenderer.displayproperty
+			l = ["ID", "ships", "vision_age", "owner"]
+			self.gamerenderer.displayproperty = l[l.index(i) + 1] if l.index(i) < (len(l) - 1) else l[0]
 		# Do one step
 		elif symbol == pyglet.window.key.N:
 			self.game.update(manual=True)
@@ -299,8 +302,6 @@ class PlanetWarsWindow(pyglet.window.Window):
 			self.set_fps(pyglet.window.fps - 5)
 		elif symbol == pyglet.window.key.ESCAPE:
 			pyglet.app.exit()
-
-		#self.adaptor.sync_all(self.view_id, self.label_type)
 
 	def on_draw(self):
 		self.clear()
