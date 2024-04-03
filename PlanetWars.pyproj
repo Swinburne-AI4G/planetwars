@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{0f0dc2ba-e673-4003-9b7a-e6b2bff46e7f}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>main.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>Global|PythonCore|3.12</InterpreterId>
+    <CommandLineArguments>--gui -m map001 -p Blanko OneSlowMove</CommandLineArguments>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="bots\Blanko.py" />
+    <Compile Include="bots\OneMove.py" />
+    <Compile Include="bots\OneSlowMove.py" />
+    <Compile Include="bots\__init__.py" />
+    <Compile Include="entities.py" />
+    <Compile Include="logger.py" />
+    <Compile Include="main.py" />
+    <Compile Include="planet_wars.py" />
+    <Compile Include="planet_wars_draw.py" />
+    <Compile Include="players.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include=".style.yapf" />
+    <Content Include="images\space.jpg" />
+    <Content Include="maps\map000.jsonc" />
+    <Content Include="maps\map001.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="bots" />
+    <Folder Include="images" />
+    <Folder Include="maps\" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.12" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>
